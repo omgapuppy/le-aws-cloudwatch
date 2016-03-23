@@ -13,3 +13,5 @@ log_token = "{YOUR_LOG_TOKEN}"
 #lambda_token = "0ae0162e-855a-4b54-9ae3-bd103006bfc0"
 
 #username = "{YOUR_USERNAME}"
+# Indicate where the CloudWatch logs originate from. For VPC flow parsing use "VPC"
+aws_service = "{LOG_SOURCE}"

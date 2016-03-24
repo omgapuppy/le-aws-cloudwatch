@@ -3,6 +3,7 @@ import json
 import gzip
 import re
 import socket
+import uuid
 import ssl
 from StringIO import StringIO
 from le_config import *
@@ -14,6 +15,8 @@ PORT = 20000
 
 
 def lambda_handler(event, context):
+    # create stream uuid
+    stream_id = uuid.uuid4()
     # validate and store debug log tokens
     tokens = []
     if validate_uuid(debug_token) is True:
@@ -36,7 +39,8 @@ def lambda_handler(event, context):
     log_events = json.loads(cw_logs)
 
     for token in tokens:
-        send_to_le("le_cloudwatch \"user\": \"{}\" started sending logs".format(username), sock, token)
+        send_to_le("\"streamID\": \"{}\" le_cloudwatch"
+                   " \"user\": \"{}\" started sending logs".format(stream_id[:8], username), sock, token)
 
     # loop through the events and send to Logentries
     for log_event in log_events['logEvents']:
@@ -46,14 +50,17 @@ def lambda_handler(event, context):
             send_to_le(json.dumps(log_event['extractedFields']), sock, log_token)
         except KeyError:
             for token in tokens:
-                send_to_le("le_cloudwatch \"user\": \"{}\" \"key\": \"extractedFields\" not found, "
+                send_to_le("\"streamID\": \"{}\" le_cloudwatch \"user\": \"{}\" "
+                           "\"key\": \"extractedFields\" not found, "
                            "sending plain text instead. "
-                           "Please configure log formats and fields in AWS".format(username), sock, token)
+                           "Please configure log formats and fields in"
+                           " AWS".format(stream_id[:8], username), sock, token)
             send_to_le(json.dumps(log_event['message']), sock, log_token)
 
     # close socket
     for token in tokens:
-        send_to_le("le_cloudwatch \"user\": \"{}\" finished sending logs".format(username), sock, token)
+        send_to_le("\"streamID\": \"{}\" le_cloudwatch"
+                   " \"user\": \"{}\" finished sending logs".format(stream_id[:8], username), sock, token)
     sock.close()
 
 

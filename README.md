@@ -1,2 +1,2 @@
 # le-aws-cloudwatch
-Lambda for sending AWS CloudWatch logs to Logentries
+AWS Lambda function for sending AWS CloudWatch logs to Logentries

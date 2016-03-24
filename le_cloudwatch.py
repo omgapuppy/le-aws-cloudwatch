@@ -1,7 +1,7 @@
 import logging
 import json
 import gzip
-import datetime
+import re
 import socket
 import ssl
 from StringIO import StringIO
@@ -14,8 +14,17 @@ PORT = 20000
 
 
 def lambda_handler(event, context):
+    # validate and store debug log tokens
+    tokens = []
+    if validate_uuid(debug_token) is True:
+        tokens.append(debug_token)
+    if validate_uuid(lambda_token) is True:
+        tokens.append(lambda_token)
+    else:
+        pass
+
     # Create socket connection to Logentries
-    le_socket = create_socket()
+    sock = create_socket()
 
     # get CloudWatch logs
     cw_data = str(event['awslogs']['data'])
@@ -23,24 +32,29 @@ def lambda_handler(event, context):
     # decode and uncompress CloudWatch logs
     cw_logs = gzip.GzipFile(fileobj=StringIO(cw_data.decode('base64', 'strict'))).read()
 
-    if aws_service == "VPC":
-        # convert the log data from JSON into a dictionary
-        vpc_event = json.loads(cw_logs)
+    # convert the log data from JSON into a dictionary
+    log_events = json.loads(cw_logs)
 
-        # loop through the events line by line
-        for t in vpc_event['logEvents']:
-            # Transform the data and send it to Logentries
-            send_to_le("CEF:0|AWS CloudWatch|FlowLogs|1.0|src=" +
-                       str(t['extractedFields']['srcaddr']) +
-                       "|spt=" + str(t['extractedFields']['srcport']) +
-                       "|dst=" + str(t['extractedFields']['dstaddr']) +
-                       "|dpt=" + str(t['extractedFields']['dstport']) +
-                       "|proto=" + str(t['extractedFields']['protocol']) +
-                       "|start=" + str(t['extractedFields']['start']) +
-                       "|end=" + str(t['extractedFields']['end']) +
-                       "|out=" + str(t['extractedFields']['bytes']),
-                       le_socket)
-    le_socket.close()
+    for token in tokens:
+        send_to_le("le_cloudwatch \"user\": \"{}\" started sending logs".format(username), sock, token)
+
+    # loop through the events and send to Logentries
+    for log_event in log_events['logEvents']:
+
+        # look for extracted fields, if not present, send plain message
+        try:
+            send_to_le(json.dumps(log_event['extractedFields']), sock, log_token)
+        except KeyError:
+            for token in tokens:
+                send_to_le("le_cloudwatch \"user\": \"{}\" \"key\": \"extractedFields\" not found, "
+                           "sending plain text instead. "
+                           "Please configure log formats and fields in AWS".format(username), sock, token)
+            send_to_le(json.dumps(log_event['message']), sock, log_token)
+
+    # close socket
+    for token in tokens:
+        send_to_le("le_cloudwatch \"user\": \"{}\" finished sending logs".format(username), sock, token)
+    sock.close()
 
 
 def create_socket():
@@ -50,7 +64,11 @@ def create_socket():
     return s
 
 
-def send_to_le(line, le_socket):
-    le_socket.sendall('%s %s\n' % (log_token, line))
+def send_to_le(line, le_socket, token):
+    le_socket.sendall('%s %s\n' % (token, line))
 
 
+def validate_uuid(uuid_string):
+    regex = re.compile('^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$', re.I)
+    match = regex.match(uuid_string)
+    return bool(match)

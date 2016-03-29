@@ -30,7 +30,7 @@
 4. Edit code:
    * Edit the contents of ```le_config.py```
    * Replace values of ```log_token``` and ```debug_token``` with tokens obtained earlier.
-   * Create a .ZIP file, containing the updated ```le_config.py```, ```le_lambda.py``` and ```le_certs.pem```
+   * Create a .ZIP file, containing the updated ```le_config.py```, ```le_cloudwatch.py``` and ```le_certs.pem```
      * Make sure the files are in the root of the ZIP archive, and **NOT** in a folder
    * Choose "Upload a .ZIP file" in AWS Lambda and upload the archive created in previous step
 

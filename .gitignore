@@ -96,3 +96,13 @@ target/
 
 # JIRA plugin
 atlassian-ide-plugin.xml
+
+.idea/.name
+
+.idea/encodings.xml
+
+.idea/modules.xml
+
+.idea/misc.xml
+
+.idea/le-aws-cloudwatch.iml

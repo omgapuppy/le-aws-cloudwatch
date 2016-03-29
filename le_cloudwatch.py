@@ -38,6 +38,7 @@ def lambda_handler(event, context):
     # convert the log data from JSON into a dictionary
     log_events = json.loads(cw_logs)
 
+    # Send debug info re start of stream
     for token in tokens:
         send_to_le("\"streamID\": \"{}\" le_cloudwatch"
                    " \"user\": \"{}\" started sending logs".format(stream_id[:8], username), sock, token)
@@ -49,26 +50,24 @@ def lambda_handler(event, context):
         try:
             send_to_le(json.dumps(log_event['extractedFields']), sock, log_token)
         except KeyError:
-            for token in tokens:
-                send_to_le("\"streamID\": \"{}\" le_cloudwatch \"user\": \"{}\" "
-                           "\"key\": \"extractedFields\" not found, "
-                           "sending plain text instead. "
-                           "Please configure log formats and fields in"
-                           " AWS".format(stream_id[:8], username), sock, token)
             send_to_le(log_event['message'], sock, log_token)
 
-    # close socket
+    # Send debug info re end of stream
     for token in tokens:
         send_to_le("\"streamID\": \"{}\" le_cloudwatch"
                    " \"user\": \"{}\" finished sending logs".format(stream_id[:8], username), sock, token)
+    # close socket
     sock.close()
 
 
 def create_socket():
     s_ = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s = ssl.wrap_socket(s_, ca_certs='le_certs.pem', cert_reqs=ssl.CERT_REQUIRED)
-    s.connect((HOST, PORT))
-    return s
+    try:
+        s.connect((HOST, PORT))
+        return s
+    except socket.error, exc:
+        print "Caught exception socket.error : %s" % exc
 
 
 def send_to_le(line, le_socket, token):

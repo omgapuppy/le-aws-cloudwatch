@@ -16,7 +16,7 @@ PORT = 20000
 
 def lambda_handler(event, context):
     # create stream uuid
-    stream_id = uuid.uuid4()
+    stream_id = str(uuid.uuid4())
     # validate and store debug log tokens
     tokens = []
     if validate_uuid(debug_token) is True:
@@ -55,7 +55,7 @@ def lambda_handler(event, context):
                            "sending plain text instead. "
                            "Please configure log formats and fields in"
                            " AWS".format(stream_id[:8], username), sock, token)
-            send_to_le(json.dumps(log_event['message']), sock, log_token)
+            send_to_le(log_event['message'], sock, log_token)
 
     # close socket
     for token in tokens:

@@ -71,6 +71,7 @@
    * Specify subscription filter pattern
      * [Please see AWS Documentation for more details](http://docs.aws.amazon.com/AmazonCloudWatch/latest/DeveloperGuide/FilterAndPatternSyntax.html)
      * If this is blank / incorrect, only raw data will be forwarded to Logentries
+     * Amazon provide preconfigured filter patterns for some logs
    * Click "Next" at the bottom of the page
 
    ![Log Format](https://raw.githubusercontent.com/omgapuppy/le-aws-cloudwatch/master/doc/step11.png)
